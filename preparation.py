@@ -8,10 +8,6 @@ from transformers import CLIPProcessor, CLIPModel, CLIPTokenizerFast
 from typing import Tuple
 
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-Image.MAX_IMAGE_PIXELS = None
-
-
 def prepare_text(data: str, gold: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Takes the data and gold file pathways and returns three numpy arrays, one
@@ -106,11 +102,12 @@ def encode_images(image_pathway: str, image_emb_pathway: str, model: CLIPModel, 
     print("Encoding images...")
     all_images = os.listdir(image_pathway)
     progress_bar = tqdm(total=len(all_images))
+    
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    Image.MAX_IMAGE_PIXELS = None
 
     for img in all_images:
         image = Image.open(f"{image_pathway}/{img}").convert("RGB").resize((100, 100))
-        exif_data = image.info.get("exif")
-        image.save(f"{img}", exif=exif_data)
         input = processor(images=image, return_tensors="pt")
         image_feature = model.get_image_features(**input)
         image_feature = image_feature.detach().numpy()
