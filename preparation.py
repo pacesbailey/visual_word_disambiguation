@@ -2,10 +2,14 @@ import h5py
 import numpy as np
 import os
 
-from PIL import Image
+from PIL import Image, ImageFile
 from tqdm import tqdm
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizerFast
 from typing import Tuple
+
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+Image.MAX_IMAGE_PIXELS = None
 
 
 def prepare_text(data: str, gold: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -105,6 +109,8 @@ def encode_images(image_pathway: str, image_emb_pathway: str, model: CLIPModel, 
 
     for img in all_images:
         image = Image.open(f"{image_pathway}/{img}").convert("RGB").resize((100, 100))
+        exif_data = image.info.get("exif")
+        image.save(f"{img}", exif=exif_data)
         input = processor(images=image, return_tensors="pt")
         image_feature = model.get_image_features(**input)
         image_feature = image_feature.detach().numpy()
