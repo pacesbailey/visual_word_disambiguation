@@ -444,8 +444,8 @@ def wrap_text_files(text_emb_path: str, wrapper_path: str, test: bool = False):
         if os.path.isfile(f"{wrapper_path}/text_wrapper.h5"):
             file = h5py.File(f"{wrapper_path}/text_wrapper.h5", "a")
             for embedding in embedded_text_list:
-                file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
-                    f"{text_emb_path}/{embedding}", "text")
+                file[f"{str(embedding).removesuffix('.h5')}"] = \
+                    h5py.ExternalLink(f"{text_emb_path}/{embedding}", "text")
             file.close()
         else:
             print("File not found.")
