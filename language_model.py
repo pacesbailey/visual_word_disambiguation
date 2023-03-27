@@ -11,7 +11,7 @@ from utils import ContrastiveCosineLoss, plot_loss_graph
 def get_eval_scores(train_dataloader: DataLoader,
                     test_dataloader: DataLoader,
                     choose_model: str,
-                    loss_function: str) -> None:
+                    loss_function: str):
     """
     Runs the training process, plots the loss, hit@1 rate, and MRR per epoch,
     then runs the testing process and reports the hit@1 rate and MRR.
@@ -35,8 +35,8 @@ def get_eval_scores(train_dataloader: DataLoader,
     plot_loss_graph(epoch_loss, epoch_hit, epoch_mrr)
     hit, mrr = testing(model, test_dataloader)
 
-    print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
-    print(f"MRR value for the test set: {mrr / len(test_dataloader.dataset)}")
+    print(f"Hit@1 Score for Test Set: {hit / len(test_dataloader.dataset)}")
+    print(f"MRR Value for Test Set: {mrr / len(test_dataloader.dataset)}")
     
     
 def save_eval_scores(model: str,
