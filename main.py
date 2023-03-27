@@ -10,10 +10,10 @@ from utils import load_dataset, calculate_similarity_score
 def main():
     # Distributes the data into three parts using the prepare_text function to
     # get three numpy arrays
-    trial_text_data = './data/train.data.v1.txt'
-    trial_gold_data = './data/train.gold.v1.txt'
-    word_list, gold_list, image_list = prepare_text(trial_text_data,
-                                                    trial_gold_data)
+    train_text_data = './data/train.data.v1.txt'
+    train_gold_data = './data/train.gold.v1.txt'
+    word_list, gold_list, image_list = prepare_text(train_text_data,
+                                                    train_gold_data)
 
     parser = argparse.ArgumentParser(
         description='Visual Word Sense Disambiguation'
@@ -23,7 +23,8 @@ def main():
         "--prepare", dest="prepare",
         help="Prepares the data",
         action="store_true",
-        default=False
+        default=None,
+        choices= ["train", "test"]
     )
 
     parser.add_argument(
@@ -52,8 +53,10 @@ def main():
 
     # This flag is set to True only if the pretrained clip needs to be
     # recalculated and stored in the respective files.
-    if args.prepare:
+    if args.prepare == "train":
         get_files()
+    if args.prepare == "test":
+        get_files(test = True)
 
     # Evaluation of model by using just the pretrained clip embeddings for
     # texts and images and finding the cosine similarity between them.
