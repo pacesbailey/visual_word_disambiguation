@@ -27,6 +27,8 @@ def get_eval_scores(train_dataloader: DataLoader,
     model, epoch_loss, epoch_hit, epoch_mrr = training(train_dataloader,
                                                        choose_model,
                                                        loss_function)
+    save_eval_scores(choose_model, loss_function, epoch_loss, epoch_hit,
+                     epoch_mrr)
 
     print("Drawing graphs showing the metrics per epoch...")
 
@@ -35,6 +37,42 @@ def get_eval_scores(train_dataloader: DataLoader,
 
     print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
     print(f"MRR value for the test set: {mrr / len(test_dataloader.dataset)}")
+    
+    
+def save_eval_scores(model: str,
+                     loss_function: str,
+                     loss: list,
+                     hit: list,
+                     mrr: list):
+    """
+    Saves the evaluation metrics to a .json file for future reference.
+
+    Args:
+        model (str): name of model used
+        loss_function (str): name of loss function used
+        loss (list): list of loss values per epoch
+        hit (list): list of Hit@1 rates per epoch
+        mrr (list): list of MRR values per epoch
+    """
+    try:
+        with open("./data/metrics.json", "r+") as file:
+            existing_data = json.load(file)
+
+    except json.decoder.JSONDecodeError:
+        existing_data = {}
+
+    new_data = {}
+
+    for i in range(len(loss)):
+        new_data[f"epoch {i + 1}"] = {}
+        new_data[f"epoch {i + 1}"]["loss"] = loss[i]
+        new_data[f"epoch {i + 1}"]["hit"] = hit[i]
+        new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
+
+    existing_data[f"{model}, {loss_function}"] = new_data
+
+    with open("./data/metrics.json", "w") as file:
+        json.dump(existing_data, file, indent=4)
 
 
 def testing(model: nn.Module,
