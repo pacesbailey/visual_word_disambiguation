@@ -5,10 +5,8 @@ import pickle
 import torch
 
 from PIL import Image, ImageFile
-from transformers import CLIPProcessor, CLIPModel, CLIPTokenizerFast, \
-    AutoProcessor, AutoModel
+from transformers import CLIPProcessor, CLIPModel, CLIPTokenizerFast, AutoProcessor, AutoModel
 from tqdm import tqdm
-
 
 FEATURES_PATH = "./data/features"
 IMAGE_EMBEDDING_PATHWAY = "./data/embeddings/image_embeddings"
@@ -16,13 +14,16 @@ TEXT_EMBEDDING_PATHWAY = "./data/embeddings/text_embeddings"
 TRAIN_IMAGE_PATH = "./data/train/train_images_v1"
 TRAIN_DATA_PATH = "./data/train/train.data.v1.txt"
 TRAIN_GOLD_PATH = "./data/train/train.gold.v1.txt"
-TRIAL_IMAGE_PATH = "./data/trial/trial_images_v1"
-TRIAL_DATA_PATH = "./data/trial/trial.data.v1.txt"
-TRIAL_GOLD_PATH = "./data/trial/trial.gold.v1.txt"
+TEST_IMAGE_PATH = "./data/test/test_images_resized"
+TEST_DATA_PATH = "./data/test/en.test.data.v1.1.txt"
+TEST_GOLD_PATH = "./data/test/en.test.gold.v1.1.txt"
+TEST_TEXT_EMBEDDING_PATHWAY = './data/embeddings/test_text_embeddings'
+TEST_IMAGE_EMBEDDING_PATHWAY = './data/embeddings/test_image_embeddings'
+
 WRAPPER_PATH = "./data/embeddings/wrapper"
 
 
-def create_wrapper(wrapper_pathway: str):
+def create_wrapper(wrapper_pathway: str, test=False):
     """
     Creates a wrapper .h5 file for the text and image embeddings that points to
     the files when requested.
@@ -30,11 +31,21 @@ def create_wrapper(wrapper_pathway: str):
     Args:
         wrapper_pathway (str): destination pathway for the wrappers
     """
-    file = h5py.File(f"{wrapper_pathway}/image_wrapper.h5", "w")
-    text_file = h5py.File(f"{wrapper_pathway}/text_wrapper.h5", "w")
-    file.close()
-    text_file.close()
-    print("Wrappers created.")
+
+    if test == True:
+
+        file = h5py.File(f"{wrapper_pathway}/test_image_wrapper.h5", "w")
+        text_file = h5py.File(f"{wrapper_pathway}/test_text_wrapper.h5", "w")
+        file.close()
+        text_file.close()
+        print("Test wrappers created.")
+
+    else:
+        file = h5py.File(f"{wrapper_pathway}/image_wrapper.h5", "w")
+        text_file = h5py.File(f"{wrapper_pathway}/text_wrapper.h5", "w")
+        file.close()
+        text_file.close()
+        print("Test wrappers created.")
 
 
 def encode_images(image_pathway: str,
@@ -110,7 +121,7 @@ def encode_text(data_path: str,
     progress_bar.close()
 
 
-def get_files():
+def get_files(test: bool = False):
     """
     Takes the raw text and image files, extracts relevant data from them,
     converts them to embeddings, wraps the embeddings in .h5 files, extracts
@@ -123,27 +134,52 @@ def get_files():
     tokenizer = CLIPTokenizerFast.from_pretrained(model_name)
 
     # Creates text and image embeddings
-    encode_text(TRAIN_DATA_PATH, TRAIN_GOLD_PATH, TEXT_EMBEDDING_PATHWAY,
-                tokenizer, model)
-    encode_images(TRAIN_IMAGE_PATH, IMAGE_EMBEDDING_PATHWAY, model, processor)
 
-    # Creates wrappers for text and image embeddings
-    create_wrapper(WRAPPER_PATH)
-    wrap_image_files(IMAGE_EMBEDDING_PATHWAY, WRAPPER_PATH)
-    wrap_text_files(TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH)
+    if test == True:
 
-    # Gets text and image features, then stores them in respective files
-    text_features = get_text_embeddings(TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH)
-    image_features = get_image_embeddings(TRAIN_DATA_PATH, TRAIN_GOLD_PATH,
-                                          WRAPPER_PATH)
-    text_features, image_features = save_features(text_features,
-                                                  image_features,
-                                                  FEATURES_PATH)
+        print('Preparing the test set!')
+        print('--------')
+
+        encode_text(TEST_DATA_PATH, TEST_GOLD_PATH, TEST_TEXT_EMBEDDING_PATHWAY,
+                    tokenizer, model)
+        encode_images(TEST_IMAGE_PATH, TEST_IMAGE_EMBEDDING_PATHWAY, model, processor)
+
+        # Creates wrappers for text and image embeddings
+        create_wrapper(WRAPPER_PATH, test=True)
+        wrap_image_files(TEST_IMAGE_EMBEDDING_PATHWAY, WRAPPER_PATH, test=True)
+        wrap_text_files(TEST_TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH, test=True)
+
+        # Gets text and image features, then stores them in respective files
+        text_features = get_text_embeddings(TEST_TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH, test=True)
+        image_features = get_image_embeddings(TEST_DATA_PATH, TEST_GOLD_PATH,
+                                              WRAPPER_PATH, test=True)
+        text_features, image_features = save_features(text_features,
+                                                      image_features,
+                                                      FEATURES_PATH, test=True)
+
+    else:
+        encode_text(TRAIN_DATA_PATH, TRAIN_GOLD_PATH, TEXT_EMBEDDING_PATHWAY,
+                    tokenizer, model)
+        encode_images(TRAIN_IMAGE_PATH, IMAGE_EMBEDDING_PATHWAY, model, processor)
+
+        # Creates wrappers for text and image embeddings
+        create_wrapper(WRAPPER_PATH)
+        wrap_image_files(IMAGE_EMBEDDING_PATHWAY, WRAPPER_PATH)
+        wrap_text_files(TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH)
+
+        # Gets text and image features, then stores them in respective files
+        text_features = get_text_embeddings(TEXT_EMBEDDING_PATHWAY, WRAPPER_PATH)
+        image_features = get_image_embeddings(TRAIN_DATA_PATH, TRAIN_GOLD_PATH,
+                                              WRAPPER_PATH)
+        text_features, image_features = save_features(text_features,
+                                                      image_features,
+                                                      FEATURES_PATH)
 
 
 def get_image_embeddings(data_path: str,
                          gold_path: str,
-                         wrapper_path: str) -> dict:
+                         wrapper_path: str,
+                         test: bool = False) -> dict:
     """
     Returns a dictionary with index numbers and all tensors with image
     embeddings.
@@ -156,21 +192,40 @@ def get_image_embeddings(data_path: str,
     Return:
         dict: index numbers and tensors with image embeddings
     """
-    _, _, image_list = prepare_text(data_path, gold_path)
-    wrapper_file = h5py.File(f"{wrapper_path}/image_wrapper.h5", "r+")
-    embedding_dictionary = {}
-    progress_bar = tqdm(total=len(image_list))
 
-    for index, item in enumerate(image_list):
-        embedding_dictionary[index] = torch.stack([torch.from_numpy(
-            wrapper_file[image][0]) for image in item])
-        progress_bar.update(1)
+    if test == True:
+        _, _, image_list = prepare_text(data_path, gold_path)
+        wrapper_file = h5py.File(f"{wrapper_path}/test_image_wrapper.h5", "r+")
+        embedding_dictionary = {}
+        progress_bar = tqdm(total=len(image_list))
 
-    wrapper_file.close()
-    progress_bar.close()
+        for index, item in enumerate(image_list):
+            embedding_dictionary[index] = torch.stack([torch.from_numpy(
+                wrapper_file[image][0]) for image in item])
+            progress_bar.update(1)
 
-    print("Image embeddings retrieved.")
-    return embedding_dictionary
+        wrapper_file.close()
+        progress_bar.close()
+
+        print("Test image embeddings retrieved.")
+        return embedding_dictionary
+
+    else:
+        _, _, image_list = prepare_text(data_path, gold_path)
+        wrapper_file = h5py.File(f"{wrapper_path}/image_wrapper.h5", "r+")
+        embedding_dictionary = {}
+        progress_bar = tqdm(total=len(image_list))
+
+        for index, item in enumerate(image_list):
+            embedding_dictionary[index] = torch.stack([torch.from_numpy(
+                wrapper_file[image][0]) for image in item])
+            progress_bar.update(1)
+
+        wrapper_file.close()
+        progress_bar.close()
+
+        print("Image embeddings retrieved.")
+        return embedding_dictionary
 
 
 def get_target_index(gold_list: np.ndarray, image_list: np.ndarray) -> list:
@@ -199,34 +254,55 @@ def get_target_index(gold_list: np.ndarray, image_list: np.ndarray) -> list:
     return target_images
 
 
-def get_text_embeddings(text_emb_path: str, wrapper_path: str) -> torch.Tensor:
+def get_text_embeddings(text_emb_path: str, wrapper_path: str, test: bool = False) -> torch.Tensor:
     """
     Creates a tensor containing all text embeddings.
 
     Args:
         text_emb_path (str): file pathway to text embeddings
         wrapper_path (str): file pathway to wrapper
-
+        test(bool)
     Return:
         torch.Tensor: filled with the text embeddings
+
     """
-    embedding_list = []
 
-    for item in os.listdir(text_emb_path):
-        if not item.startswith(".") and os.path.isfile(os.path.join(
-                text_emb_path, item)):
-            embedding_list.append(item)
+    if test == True:
 
-    wrapper_file = h5py.File(f"{wrapper_path}/text_wrapper.h5", "r+")
-    text_embeddings = [torch.from_numpy(wrapper_file[
-                                            f"{item.removesuffix('.h5')}"][0])
-                       for item in embedding_list]
-    text_embeddings = torch.stack(text_embeddings)
-    wrapper_file.close()
+        embedding_list = []
+        for item in os.listdir(text_emb_path):
+            if not item.startswith(".") and os.path.isfile(os.path.join(
+                    text_emb_path, item)):
+                embedding_list.append(item)
 
-    print("Text embeddings retrieved.")
+        wrapper_file = h5py.File(f"{wrapper_path}/test_text_wrapper.h5", "r+")
+        text_embeddings = [torch.from_numpy(wrapper_file[
+                                                f"{item.removesuffix('.h5')}"][0])
+                           for item in embedding_list]
+        text_embeddings = torch.stack(text_embeddings)
+        wrapper_file.close()
+        print("Test text embeddings retrieved.")
 
-    return text_embeddings
+        return text_embeddings
+
+    else:
+        embedding_list = []
+
+        for item in os.listdir(text_emb_path):
+            if not item.startswith(".") and os.path.isfile(os.path.join(
+                    text_emb_path, item)):
+                embedding_list.append(item)
+
+        wrapper_file = h5py.File(f"{wrapper_path}/text_wrapper.h5", "r+")
+        text_embeddings = [torch.from_numpy(wrapper_file[
+                                                f"{item.removesuffix('.h5')}"][0])
+                           for item in embedding_list]
+        text_embeddings = torch.stack(text_embeddings)
+        wrapper_file.close()
+
+        print("Text embeddings retrieved.")
+
+        return text_embeddings
 
 
 def prepare_text(data_path: str,
@@ -277,7 +353,8 @@ def prepare_text(data_path: str,
 
 def save_features(text_features: torch.Tensor,
                   image_features: dict,
-                  destination_path: str) -> tuple[torch.Tensor, dict]:
+                  destination_path: str,
+                  test: bool = False) -> tuple[torch.Tensor, dict]:
     """
     Saves the text and image features to files, then returns them.
 
@@ -289,16 +366,27 @@ def save_features(text_features: torch.Tensor,
     Return:
         tuple[torch.Tensor, dict]: text and image features
     """
-    torch.save(text_features, f"{destination_path}/text_features.pt")
 
-    with open(f"{destination_path}/image_features.pickle", "wb") as file:
-        pickle.dump(image_features, file)
-        file.close()
+    if test == True:
+        torch.save(text_features, f"{destination_path}/test_text_features.pt")
 
-    return text_features, image_features
+        with open(f"{destination_path}/test_image_features.pickle", "wb") as file:
+            pickle.dump(image_features, file)
+            file.close()
+
+        return text_features, image_features
+
+    else:
+        torch.save(text_features, f"{destination_path}/text_features.pt")
+
+        with open(f"{destination_path}/image_features.pickle", "wb") as file:
+            pickle.dump(image_features, file)
+            file.close()
+
+        return text_features, image_features
 
 
-def wrap_image_files(image_emb_path: str, wrapper_path: str):
+def wrap_image_files(image_emb_path: str, wrapper_path: str, test: bool = False):
     """
     Wraps image embeddings in individual .h5 files.
 
@@ -306,23 +394,36 @@ def wrap_image_files(image_emb_path: str, wrapper_path: str):
         image_emb_path (str): pathway to image embeddings
         wrapper_path (str): destination pathway for wrapper files
     """
-    embedded_image_list = os.listdir(image_emb_path)
 
-    if os.path.isfile(f"{wrapper_path}/image_wrapper.h5"):
-        file = h5py.File(f"{wrapper_path}/image_wrapper.h5", "a")
+    if test == True:
 
-        for embedding in embedded_image_list:
-            file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
-                f"{image_emb_path}/{embedding}", "image")
+        embedded_image_list = os.listdir(image_emb_path)
+        if os.path.isfile(f"{wrapper_path}/test_image_wrapper.h5"):
+            file = h5py.File(f"{wrapper_path}/test_image_wrapper.h5", "a")
+            for embedding in embedded_image_list:
+                file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
+                    f"{image_emb_path}/{embedding}", "image")
 
-        file.close()
+            file.close()
+        else:
+            print("File not found.")
+        print("Test image embeddings wrapped.")
     else:
-        print("File not found.")
 
-    print("Image embeddings wrapped.")
+        embedded_image_list = os.listdir(image_emb_path)
+        if os.path.isfile(f"{wrapper_path}/image_wrapper.h5"):
+            file = h5py.File(f"{wrapper_path}/image_wrapper.h5", "a")
+            for embedding in embedded_image_list:
+                file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
+                    f"{image_emb_path}/{embedding}", "image")
+            file.close()
+        else:
+            print("File not found.")
+
+        print("Image embeddings wrapped.")
 
 
-def wrap_text_files(text_emb_path: str, wrapper_path: str):
+def wrap_text_files(text_emb_path: str, wrapper_path: str, test: bool = False):
     """
     Wraps text embeddings in individual .h5 files.
 
@@ -330,18 +431,27 @@ def wrap_text_files(text_emb_path: str, wrapper_path: str):
         text_emb_path (str): pathway to text embeddings
         wrapper_path (str): destination pathway for wrapper files
     """
-    embedded_text_list = os.listdir(text_emb_path)
 
-    if os.path.isfile(f"{wrapper_path}/text_wrapper.h5"):
-        file = h5py.File(f"{wrapper_path}/text_wrapper.h5", "a")
-
-        for embedding in embedded_text_list:
-            file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
-                f"{text_emb_path}/{embedding}", "text")
-
-        file.close()
+    if test == True:
+        embedded_text_list = os.listdir(text_emb_path)
+        if os.path.isfile(f"{wrapper_path}/test_text_wrapper.h5"):
+            file = h5py.File(f"{wrapper_path}/test_text_wrapper.h5", "a")
+            for embedding in embedded_text_list:
+                file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
+                    f"{text_emb_path}/{embedding}", "text")
+            file.close()
+        else:
+            print("File not found.")
+        print('Test text embeddings wrapped.')
 
     else:
-        print("File not found.")
-
-    print('Text embeddings wrapped.')
+        embedded_text_list = os.listdir(text_emb_path)
+        if os.path.isfile(f"{wrapper_path}/text_wrapper.h5"):
+            file = h5py.File(f"{wrapper_path}/text_wrapper.h5", "a")
+            for embedding in embedded_text_list:
+                file[f"{str(embedding).removesuffix('.h5')}"] = h5py.ExternalLink(
+                    f"{text_emb_path}/{embedding}", "text")
+            file.close()
+        else:
+            print("File not found.")
+        print('Text embeddings wrapped.')
