@@ -7,14 +7,13 @@ from language_model import get_eval_scores
 from utils import load_dataset, calculate_similarity_score
 
 
-def main():
-    # Distributes the data into three parts using the prepare_text function to
-    # get three numpy arrays
-    train_text_data = './data/train.data.v1.txt'
-    train_gold_data = './data/train.gold.v1.txt'
-    word_list, gold_list, image_list = prepare_text(train_text_data,
-                                                    train_gold_data)
+TEST_DATA_PATH = "./data/test/en.test.data.v1.1.txt"
+TEST_GOLD_PATH = "./data/test/en.test.gold.v1.1.txt"
+TRAIN_DATA_PATH = "./data/train/train.data.v1.txt"
+TRAIN_GOLD_PATH = "./data/train/train.gold.v1.txt"
 
+
+def main():
     parser = argparse.ArgumentParser(
         description='Visual Word Sense Disambiguation'
     )
@@ -22,9 +21,9 @@ def main():
     parser.add_argument(
         "--prepare", dest="prepare",
         help="Prepares the data",
-        action="store_true",
+        action="store",
         default=None,
-        choices= ["train", "test"]
+        choices=["train", "test"]
     )
 
     parser.add_argument(
@@ -45,18 +44,22 @@ def main():
 
     args = parser.parse_args()
 
-    text_features, image_features, target_images = load_dataset(image_list,
-                                                                gold_list)
-    train_dataloader, test_dataloader = get_dataloaders(text_features,
-                                                        image_features,
-                                                        target_images)
+    # Loads the training and test data for the CLIP models
+    _, train_gold, train_image = prepare_text(TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+    _, test_gold, test_image = prepare_text(TEST_DATA_PATH, TEST_GOLD_PATH)
+    train_features = load_dataset(train_image, train_gold, test=False)
+    test_features = load_dataset(test_image, test_gold, test=True)
+    text_features, image_features, target_images = train_features
+    train_dataloader, test_dataloader = get_dataloaders(train_features,
+                                                        test_features)
 
     # This flag is set to True only if the pretrained clip needs to be
     # recalculated and stored in the respective files.
     if args.prepare == "train":
         get_files()
+
     if args.prepare == "test":
-        get_files(test = True)
+        get_files(test=True)
 
     # Evaluation of model by using just the pretrained clip embeddings for
     # texts and images and finding the cosine similarity between them.
@@ -109,7 +112,6 @@ def main():
                             loss_function="cross entropy loss")
 
         if args.loss_function == "contrastive_cosine_loss":
-            print('q')
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_3",
