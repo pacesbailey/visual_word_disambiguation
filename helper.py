@@ -34,7 +34,7 @@ def create_wrapper(wrapper_pathway: str, test: bool = False):
         test (bool): determines use for test or train data
     """
 
-    if test == True:
+    if test:
 
         file = h5py.File(f"{wrapper_pathway}/test_image_wrapper.h5", "w")
         text_file = h5py.File(f"{wrapper_pathway}/test_text_wrapper.h5", "w")
