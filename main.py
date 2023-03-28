@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from data_preparation import get_dataloaders
 from evaluation import evaluate_with_logits
@@ -30,7 +31,7 @@ def main():
         "--choose_model", dest="CLIP_train",
         help="Calls the CLIP model selected here",
         action="store",
-        default="CLIP_3",
+        default=None,
         choices=["CLIP_0", "CLIP_1", "CLIP_2", "CLIP_3"]
     )
 
@@ -45,13 +46,14 @@ def main():
     args = parser.parse_args()
 
     # Loads the training and test data for the CLIP models
-    _, train_gold, train_image = prepare_text(TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+    _, train_gold, train_image = prepare_text(TRAIN_DATA_PATH,
+                                              TRAIN_GOLD_PATH)
     _, test_gold, test_image = prepare_text(TEST_DATA_PATH, TEST_GOLD_PATH)
     train_features = load_dataset(train_image, train_gold, test=False)
     test_features = load_dataset(test_image, test_gold, test=True)
-    text_features, image_features, target_images = train_features
     train_dataloader, test_dataloader = get_dataloaders(train_features,
                                                         test_features)
+    text_features, image_features, target_images = test_features
 
     # This flag is set to True only if the pretrained clip needs to be
     # recalculated and stored in the respective files.
