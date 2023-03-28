@@ -50,8 +50,10 @@ def get_dataloaders(train_features: tuple, test_features: tuple) -> tuple:
     data is formed in accordance with the DataSetForCLIP class.
 
     Args:
-        train_features (tuple):
-        test_features (tuple):
+        train_features (tuple): contains the text and image features, as well
+                                as the targets for the training data
+        test_features (tuple): contains the text and image features, as well
+                               as the targets for the testing data
 
       Return:
           tuple[DataLoader, DataLoader]: train and test_dataloader
