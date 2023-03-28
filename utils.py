@@ -10,8 +10,10 @@ from torch import Tensor
 # Text and Image embeddings generated from CLIP are stored here, so
 # which are used for further processing without generating them every time
 # we run the code.
-TEXT_EMB_PATH = "./data/features/text_features.pt"
-IMAGE_EMB_PATH = "./data/features/image_features.pickle"
+TEST_TEXT_FEATURES_PATH = "./data/features/test_text_features.pt"
+TEST_IMAGE_FEATURES_PATH = "./data/features/test_image_features.pickle"
+TRAIN_TEXT_FEATURES_PATH = "./data/features/train_text_features.pt"
+TRAIN_IMAGE_FEATURES_PATH = "./data/features/train_image_features.pickle"
 
 
 class ContrastiveCosineLoss(nn.Module):
@@ -85,36 +87,51 @@ def gold_position_search(image_array: np.ndarray,
 
 
 def load_dataset(image_list: np.ndarray,
-                 gold_list: np.ndarray) -> tuple[Tensor, list[Tensor], list]:
+                 gold_list: np.ndarray,
+                 test: bool) -> tuple[Tensor, list[Tensor], list]:
     """
     Args:
         image_list (np.ndarray): each row depicts the 10 images assigned to the
                                  text at that index in text_list
         gold_list (np.ndarray): contains the image out of the image_list which
                                 is most relevant to the text
+        test (bool): indicates training or testing
 
     Return:
         float: normalized text and image features, as well as the target images
     """
-    # Loads the pretrained CLIP text embeddings for all the texts in word_list.
-    # Embeddings are stored in a pt file. To request a rerun to regenerate
-    # these embedding files, please set the "prepare" argument to false.
-    text_features = torch.load(TEXT_EMB_PATH)
+    if test:
+        # Loads the pretrained CLIP text embeddings for all the texts in
+        # word_list. Embeddings are stored in a pt file. To request a rerun to
+        # regenerate these embedding files, please set the "prepare" argument
+        # to false.
+        text_features = torch.load(TEST_TEXT_FEATURES_PATH)
 
-    # Loads the pretrained CLIP image embeddings for all the image in the same
-    # format as image_list. Embeddings are stored in a pickle file due to
-    # nature of the data (dictionary). To request rerun to regenerate these
-    # embedding files, please make the "prepare" argument as false.
-    with open(IMAGE_EMB_PATH, 'rb') as f:
-        image_features = pickle.load(f)
-        f.close()
+        # Loads the pretrained CLIP image embeddings for all the image in the
+        # same format as image_list. Embeddings are stored in a pickle file due
+        # to nature of the data (dictionary). To request rerun to regenerate
+        # these embedding files, please make the "prepare" argument as false.
+        with open(TEST_IMAGE_FEATURES_PATH, 'rb') as f:
+            image_features = pickle.load(f)
+            f.close()
 
-    # A list that contains the index of gold_image per trial
-    target_images = gold_position_search(image_list, gold_list)
+        # A list that contains the index of gold_image per trial
+        target_images = gold_position_search(image_list, gold_list)
 
-    # Normalizes the text and image features
-    text_features, image_features = normalize_features(text_features,
-                                                       image_features)
+        # Normalizes the text and image features
+        text_features, image_features = normalize_features(text_features,
+                                                           image_features)
+
+    else:
+        text_features = torch.load(TRAIN_TEXT_FEATURES_PATH)
+
+        with open(TRAIN_IMAGE_FEATURES_PATH, 'rb') as f:
+            image_features = pickle.load(f)
+            f.close()
+
+        target_images = gold_position_search(image_list, gold_list)
+        text_features, image_features = normalize_features(text_features,
+                                                           image_features)
 
     return text_features, image_features, target_images
 
@@ -170,7 +187,8 @@ def plot_loss_graph(epoch_loss: list, epoch_hit: list, epoch_mrr: list):
     plt.subplot(1, 3, 3)
     plt.plot(epoch_mrr)
     plt.xlabel("Epochs")
-    plt.ylabel("Mean Reciprocal Rate")
+    plt.ylabel("Mean Reciprocal Rank")
     plt.title("MRR per Epoch")
+
     plt.savefig("clip.png")
     plt.show()

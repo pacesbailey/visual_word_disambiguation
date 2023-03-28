@@ -1,3 +1,4 @@
+import json
 import torch
 import torch.nn as nn
 
@@ -5,13 +6,14 @@ from evaluation import hit_score, mrr_score
 from finetune_clip_models import CLIP_1, CLIP_2, CLIP_3
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing import Union
 from utils import ContrastiveCosineLoss, plot_loss_graph
 
 
 def get_eval_scores(train_dataloader: DataLoader,
                     test_dataloader: DataLoader,
                     choose_model: str,
-                    loss_function: str):
+                    loss_function: str) -> None:
     """
     Runs the training process, plots the loss, hit@1 rate, and MRR per epoch,
     then runs the testing process and reports the hit@1 rate and MRR.
@@ -28,31 +30,34 @@ def get_eval_scores(train_dataloader: DataLoader,
                                                        choose_model,
                                                        loss_function)
     save_eval_scores(choose_model, loss_function, epoch_loss, epoch_hit,
-                     epoch_mrr)
+                     epoch_mrr, test=False)
 
     print("Drawing graphs showing the metrics per epoch...")
 
     plot_loss_graph(epoch_loss, epoch_hit, epoch_mrr)
     hit, mrr = testing(model, test_dataloader)
+    save_eval_scores(choose_model, loss_function, None, hit, mrr, test=True)
 
-    print(f"Hit@1 Score for Test Set: {hit / len(test_dataloader.dataset)}")
-    print(f"MRR Value for Test Set: {mrr / len(test_dataloader.dataset)}")
-    
-    
+    print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
+    print(f"MRR value for the test set: {mrr / len(test_dataloader.dataset)}")
+
+
 def save_eval_scores(model: str,
                      loss_function: str,
-                     loss: list,
-                     hit: list,
-                     mrr: list):
+                     loss: Union[list, None],
+                     hit: Union[list, float],
+                     mrr: Union[list, float],
+                     test: bool):
     """
     Saves the evaluation metrics to a .json file for future reference.
 
     Args:
         model (str): name of model used
         loss_function (str): name of loss function used
-        loss (list): list of loss values per epoch
-        hit (list): list of Hit@1 rates per epoch
-        mrr (list): list of MRR values per epoch
+        loss (Union[list, None]): list of loss values per epoch
+        hit (Union[list, float]): Hit@1 rates per epoch
+        mrr (Union[list, float]): MRR values per epoch
+        test (bool): indicates if used for testing or training
     """
     try:
         with open("./data/metrics.json", "r+") as file:
@@ -61,15 +66,24 @@ def save_eval_scores(model: str,
     except json.decoder.JSONDecodeError:
         existing_data = {}
 
+    if f"{model}, {loss_function}" not in existing_data:
+        existing_data[f"{model}, {loss_function}"] = {}
+
     new_data = {}
 
-    for i in range(len(loss)):
-        new_data[f"epoch {i + 1}"] = {}
-        new_data[f"epoch {i + 1}"]["loss"] = loss[i]
-        new_data[f"epoch {i + 1}"]["hit"] = hit[i]
-        new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
+    if test:
+        new_data["hit"] = hit
+        new_data["mrr"] = mrr[0]
+        existing_data[f"{model}, {loss_function}"]["test metrics"] = new_data
 
-    existing_data[f"{model}, {loss_function}"] = new_data
+    else:
+        for i in range(len(loss)):
+            new_data[f"epoch {i + 1}"] = {}
+            new_data[f"epoch {i + 1}"]["loss"] = loss[i]
+            new_data[f"epoch {i + 1}"]["hit"] = hit[i]
+            new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
+
+        existing_data[f"{model}, {loss_function}"]["train metrics"] = new_data
 
     with open("./data/metrics.json", "w") as file:
         json.dump(existing_data, file, indent=4)

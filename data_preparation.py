@@ -3,6 +3,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
+FEATURES_PATH = "./data/features/"
+
+
 class DataSetForCLIP(Dataset):
     """
     The DataSetForCLIP class takes the text_data, image_data and gold_labels as
@@ -40,27 +43,23 @@ class DataSetForCLIP(Dataset):
         return text_emb, image_emb, label, index
 
 
-def get_dataloaders(text_features: torch.Tensor,
-                    image_features: list[torch.Tensor],
-                    target_images: list):
+def get_dataloaders(train_features: tuple, test_features: tuple) -> tuple:
     """
     This function enables us separate our data into batches of 32 which shuffle
     enabled for training data. The above functionality is enabled after the
     data is formed in accordance with the DataSetForCLIP class.
 
     Args:
-        text_features (torch.Tensor): tensor with text_embeddings tensors
-        image_features (list[torch.Tensor]): 10 tensors to form one row that
-                                             correspond to one text
-        target_images (list): each index represents the gold_image position
-                              in the image_list array
+        train_features (tuple): contains the text and image features, as well
+                                as the targets for the training data
+        test_features (tuple): contains the text and image features, as well
+                               as the targets for the testing data
 
       Return:
-          train and test_dataloader
+          tuple[DataLoader, DataLoader]: train and test_dataloader
     """
-    train_text, test_text, train_image, test_image, train_targets, \
-    test_targets = train_test_split(image_features, text_features,
-                                    target_images)
+    train_text, train_image, train_targets = train_features
+    test_text, test_image, test_targets = test_features
 
     # The train_text and train_image are combined to get train_data and feed to
     # the dataloader to get batches of 32. The same thing is done for the test
@@ -71,34 +70,3 @@ def get_dataloaders(text_features: torch.Tensor,
     test_dataloader = DataLoader(test_data, batch_size=32)
 
     return train_dataloader, test_dataloader
-
-
-def train_test_split(image_features: list,
-                     text_features: torch.Tensor,
-                     target_images: list):
-    """
-    Divides the training set so that 75% acts as the training data and 25% acts
-    as the test data.
-
-    Args:
-        image_features (list): image embedding tensors, 10 per row
-        text_features (torch.Tensor): contains text embedding tensors
-        target_images (list): each index represents the gold image position
-                              in the image list array
-    
-    Return: 
-        tuple: train and test split for all the three above arguments
-    """
-    train_size = int(len(image_features) * 0.75)
-
-    train_text = text_features[:train_size]
-    test_text = text_features[train_size:]
-
-    train_image = image_features[:train_size]
-    test_image = image_features[train_size:]
-
-    train_targets = target_images[:train_size]
-    test_targets = target_images[train_size:]
-
-    return train_text, test_text, train_image, test_image, train_targets, \
-           test_targets
