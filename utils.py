@@ -189,5 +189,6 @@ def plot_loss_graph(epoch_loss: list, epoch_hit: list, epoch_mrr: list):
     plt.xlabel("Epochs")
     plt.ylabel("Mean Reciprocal Rank")
     plt.title("MRR per Epoch")
+
     plt.savefig("clip.png")
     plt.show()
