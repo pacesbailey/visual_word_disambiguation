@@ -4,6 +4,7 @@ import numpy as np
 def evaluate_with_logits(logits_per_image: list,
                          target_images: list) -> tuple[float, float]:
     """
+    Calculates the Hit@1 score and MRR value using logits.
 
 
     Args:
