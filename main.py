@@ -1,19 +1,28 @@
 import argparse
-import os
 
+import torch
 from data_preparation import get_dataloaders
 from evaluation import evaluate_with_logits
 from helper import prepare_text, get_files
 from language_model import get_eval_scores
 from utils import load_dataset, calculate_similarity_score
 
-TEST_DATA_PATH = "./data/test/en.test.data.v1.1.txt"
-TEST_GOLD_PATH = "./data/test/en.test.gold.v1.1.txt"
-TRAIN_DATA_PATH = "./data/train/train.data.v1.txt"
-TRAIN_GOLD_PATH = "./data/train/train.gold.v1.txt"
-
 
 def main():
+    # Distributes the data into three parts using the prepare_text function to
+    # get three numpy arrays
+    TRAIN_TEXT_DATA = './data/train/train.data.v1.txt'
+    TRAIN_GOLD_DATA = './data/train/train.gold.v1.txt'
+    TEST_TEXT_DATA = './data/test/en.test.data.v1.1.txt'
+    TEST_GOLD_DATA = './data/test/en.test.gold.v1.1.txt'
+
+    _, gold_list, image_list = prepare_text(TRAIN_TEXT_DATA,
+                                            TRAIN_GOLD_DATA)
+
+    _, test_gold_list, test_image_list = prepare_text(TEST_TEXT_DATA,
+                                                      TEST_GOLD_DATA)
+
+
     parser = argparse.ArgumentParser(
         description='Visual Word Sense Disambiguation'
     )
@@ -23,7 +32,7 @@ def main():
         help="Prepares the data",
         action="store",
         default=None,
-        choices=["train", "test"]
+        choices= ["train", "test"]
     )
 
     parser.add_argument(
@@ -38,45 +47,37 @@ def main():
         "--loss_function", dest="loss_function",
         help="Selects the loss function to be used",
         action="store",
-        default="contrastive_cosine_loss",
+        default=None,
         choices=["cross_entropy_loss", "contrastive_cosine_loss"]
     )
-
+    parser.add_argument(
+        "--continue_training", dest = "continue_training",
+        help = "continues training where we left off",
+        action = "store_true",
+        default = None
+    )
     args = parser.parse_args()
 
-    # Checks for embedding files before beginning the training process
-    if not os.listdir('./data/embeddings/train_text_embeddings') or \
-            os.listdir('./data/embeddings/train_image_embeddings'):
-        print("No training embeddings could be found. Please run the "
-              "'--prepare train' argument before proceeding.")
 
-    elif not os.listdir('./data/embeddings/test_text_embeddings') or \
-            os.listdir('./data/embeddings/test_image_embeddings'):
-        print("No test embeddings could be found. Please run the '--prepare"
-              " test' argument before proceeding.")
-
-    else:
-        # Loads the training and test data for the CLIP models
-        _, train_gold, train_image = prepare_text(TRAIN_DATA_PATH,
-                                                  TRAIN_GOLD_PATH)
-        _, test_gold, test_image = prepare_text(TEST_DATA_PATH, TEST_GOLD_PATH)
-        train_features = load_dataset(train_image, train_gold, test=False)
-        test_features = load_dataset(test_image, test_gold, test=True)
-        train_dataloader, test_dataloader = get_dataloaders(train_features,
-                                                            test_features)
-        text_features, image_features, target_images = test_features
 
     # This flag is set to True only if the pretrained clip needs to be
     # recalculated and stored in the respective files.
     if args.prepare == "train":
         get_files()
-
     if args.prepare == "test":
-        get_files(test=True)
+        get_files(test = True)
 
     # Evaluation of model by using just the pretrained clip embeddings for
     # texts and images and finding the cosine similarity between them.
     if args.CLIP_train == "CLIP_0":
+        text_features, image_features, target_images = load_dataset(image_list,
+                                                                    gold_list)
+        test_text_features, test_image_features, test_target_images = load_dataset(test_image_list,
+                                                                                   test_gold_list,
+                                                                                   test=True)
+        train_dataloader = get_dataloaders(text_features, image_features, target_images)
+        test_dataloader = get_dataloaders(test_text_features, test_image_features, test_target_images)
+
         logits_per_image = calculate_similarity_score(text_features,
                                                       image_features)
         hit_at_1, mrr = evaluate_with_logits(logits_per_image, target_images)
@@ -90,6 +91,17 @@ def main():
 
     # This is the case if CLIP_1 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_1":
+
+        #define datasets (train and test)
+        text_features, image_features, target_images = load_dataset(image_list,
+                                                                    gold_list)
+        test_text_features, test_image_features, test_target_images = load_dataset(test_image_list,
+                                                                                   test_gold_list,
+                                                                                   test=True)
+        train_dataloader = get_dataloaders(text_features, image_features, target_images)
+        test_dataloader = get_dataloaders(test_text_features, test_image_features, test_target_images)
+
+
         if args.loss_function == "cross_entropy_loss":
             get_eval_scores(train_dataloader,
                             test_dataloader,
@@ -104,6 +116,16 @@ def main():
 
     # This is the case if CLIP_2 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_2":
+
+        #define datasets (train and test)
+        text_features, image_features, target_images = load_dataset(image_list,
+                                                                    gold_list)
+        test_text_features, test_image_features, test_target_images = load_dataset(test_image_list,
+                                                                                   test_gold_list,
+                                                                                   test=True)
+        train_dataloader = get_dataloaders(text_features, image_features, target_images)
+        test_dataloader = get_dataloaders(test_text_features, test_image_features, test_target_images)
+
         if args.loss_function == "cross_entropy_loss":
             get_eval_scores(train_dataloader,
                             test_dataloader,
@@ -118,6 +140,16 @@ def main():
 
     # This is the case if CLIP_3 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_3":
+
+        #define datasets (train and test)
+        text_features, image_features, target_images = load_dataset(image_list,
+                                                                    gold_list)
+        test_text_features, test_image_features, test_target_images = load_dataset(test_image_list,
+                                                                                   test_gold_list,
+                                                                                   test=True)
+        train_dataloader = get_dataloaders(text_features, image_features, target_images)
+        test_dataloader = get_dataloaders(test_text_features, test_image_features, test_target_images)
+
         if args.loss_function == "cross_entropy_loss":
             get_eval_scores(train_dataloader,
                             test_dataloader,
@@ -125,11 +157,27 @@ def main():
                             loss_function="cross entropy loss")
 
         if args.loss_function == "contrastive_cosine_loss":
+            print('q')
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_3",
                             loss_function="contrastive cosine loss")
 
+
+    if args.continue_training:
+        print('continuing training')
+        # define datasets (train and test)
+        text_features, image_features, target_images = load_dataset(image_list,
+                                                                    gold_list)
+        test_text_features, test_image_features, test_target_images = load_dataset(test_image_list,
+                                                                                   test_gold_list,
+                                                                                   test=True)
+        train_dataloader = get_dataloaders(text_features, image_features, target_images)
+        test_dataloader = get_dataloaders(test_text_features, test_image_features, test_target_images)
+        get_eval_scores(train_dataloader,
+                        test_dataloader,
+                        choose_model="continue",
+                        loss_function="contrastive cosine loss")
 
 if __name__ == "__main__":
     main()

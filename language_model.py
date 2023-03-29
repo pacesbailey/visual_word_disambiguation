@@ -1,19 +1,19 @@
-import json
 import torch
 import torch.nn as nn
+import json
 
 from evaluation import hit_score, mrr_score
 from finetune_clip_models import CLIP_1, CLIP_2, CLIP_3
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from typing import Union
 from utils import ContrastiveCosineLoss, plot_loss_graph
 
 
 def get_eval_scores(train_dataloader: DataLoader,
                     test_dataloader: DataLoader,
                     choose_model: str,
-                    loss_function: str) -> None:
+                    loss_function: str,
+                    ):
     """
     Runs the training process, plots the loss, hit@1 rate, and MRR per epoch,
     then runs the testing process and reports the hit@1 rate and MRR.
@@ -26,38 +26,42 @@ def get_eval_scores(train_dataloader: DataLoader,
         choose_model (str): specifies model to be used
         loss_function (str): specifies loss function to be used
     """
-    model, epoch_loss, epoch_hit, epoch_mrr = training(train_dataloader,
-                                                       choose_model,
-                                                       loss_function)
-    save_eval_scores(choose_model, loss_function, epoch_loss, epoch_hit,
-                     epoch_mrr, test=False)
 
+    if choose_model == "continue":
+
+        model, epoch_loss, epoch_hit, epoch_mrr = training(train_dataloader,
+                                                           choose_model,
+                                                           loss_function)
+    else:
+        model, epoch_loss, epoch_hit, epoch_mrr = training(train_dataloader,
+                                                           choose_model,
+                                                           loss_function)
+    #save_eval_scores(choose_model, loss_function, epoch_loss, epoch_hit,
+                    # epoch_mrr)
+    torch.save(model, f'./data/saved_models/{choose_model}.pth')
     print("Drawing graphs showing the metrics per epoch...")
 
     plot_loss_graph(epoch_loss, epoch_hit, epoch_mrr)
     hit, mrr = testing(model, test_dataloader)
-    save_eval_scores(choose_model, loss_function, None, hit, mrr, test=True)
 
-    print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
-    print(f"MRR value for the test set: {mrr / len(test_dataloader.dataset)}")
-
-
+    print(f"Hit@1 Score for Test Set: {hit / len(test_dataloader.dataset)}")
+    print(f"MRR Value for Test Set: {mrr / len(test_dataloader.dataset)}")
+    
+    
 def save_eval_scores(model: str,
                      loss_function: str,
-                     loss: Union[list, None],
-                     hit: Union[list, float],
-                     mrr: Union[list, float],
-                     test: bool):
+                     loss: list,
+                     hit: list,
+                     mrr: list):
     """
     Saves the evaluation metrics to a .json file for future reference.
 
     Args:
         model (str): name of model used
         loss_function (str): name of loss function used
-        loss (Union[list, None]): list of loss values per epoch
-        hit (Union[list, float]): Hit@1 rates per epoch
-        mrr (Union[list, float]): MRR values per epoch
-        test (bool): indicates if used for testing or training
+        loss (list): list of loss values per epoch
+        hit (list): list of Hit@1 rates per epoch
+        mrr (list): list of MRR values per epoch
     """
     try:
         with open("./data/metrics.json", "r+") as file:
@@ -66,24 +70,15 @@ def save_eval_scores(model: str,
     except json.decoder.JSONDecodeError:
         existing_data = {}
 
-    if f"{model}, {loss_function}" not in existing_data:
-        existing_data[f"{model}, {loss_function}"] = {}
-
     new_data = {}
 
-    if test:
-        new_data["hit"] = hit
-        new_data["mrr"] = mrr[0]
-        existing_data[f"{model}, {loss_function}"]["test metrics"] = new_data
+    for i in range(len(loss)):
+        new_data[f"epoch {i + 1}"] = {}
+        new_data[f"epoch {i + 1}"]["loss"] = loss[i]
+        new_data[f"epoch {i + 1}"]["hit"] = hit[i]
+        new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
 
-    else:
-        for i in range(len(loss)):
-            new_data[f"epoch {i + 1}"] = {}
-            new_data[f"epoch {i + 1}"]["loss"] = loss[i]
-            new_data[f"epoch {i + 1}"]["hit"] = hit[i]
-            new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
-
-        existing_data[f"{model}, {loss_function}"]["train metrics"] = new_data
+    existing_data[f"{model}, {loss_function}"] = new_data
 
     with open("./data/metrics.json", "w") as file:
         json.dump(existing_data, file, indent=4)
@@ -110,9 +105,9 @@ def testing(model: nn.Module,
 
     with torch.no_grad():
         for batch in tqdm(test_dataloader):
-            images, text, _, label_idx = batch
+            text, images, _, label_idx = batch
             text_logit, img_logit = model(images, text)
-            sim = torch.einsum('ijk,ik->ij', text_logit, img_logit)
+            sim = torch.einsum('ik,ijk->ij', text_logit, img_logit)
 
             hit += hit_score(sim, label_idx)
             mrr += mrr_score(sim, label_idx)
@@ -122,7 +117,8 @@ def testing(model: nn.Module,
 
 def training(train_dataloader: DataLoader,
              choose_model: str = "clip_3",
-             loss_function: str = "contrastive cosine loss") -> tuple:
+             loss_function: str = "contrastive cosine loss",
+             ) -> tuple:
     """
     Runs the training process given the training data, the chosen model, and
     the chosen loss function.
@@ -141,7 +137,8 @@ def training(train_dataloader: DataLoader,
     input_size = 512
     hidden_size = 512
     output_size = 512
-
+    save_every = 5
+    saved_loc = './data/saved_models/continued_model_3.pth' #model saving location
     print(f"Starting training process for {choose_model} with {loss_function} "
           f"as the loss function...")
 
@@ -149,6 +146,11 @@ def training(train_dataloader: DataLoader,
         loss_f = ContrastiveCosineLoss()
     elif loss_function == "cross entropy loss":
         loss_f = nn.CrossEntropyLoss()
+
+    if choose_model == "continue":
+        f = 'data/saved_models/clip_3.pth'
+        saved_model = torch.load(f)
+        model = saved_model
 
     if choose_model == "clip_1":
         model = CLIP_1(input_size, output_size)
@@ -174,13 +176,13 @@ def training(train_dataloader: DataLoader,
         print(f"Epoch: {epoch + 1}")
 
         for batch in tqdm(train_dataloader):
-            img, text, target, label_idx = batch
+            text, img, target, label_idx = batch
             optimizer.zero_grad()
             text_logit, img_logit = model(img, text)
 
             # Performs matrix multiplication of 2 tensors given the dimensions.
             # This method is called Einstein's summation.
-            sim = torch.einsum('ijk,ik->ij', text_logit, img_logit)
+            sim = torch.einsum('ik,ijk->ij', text_logit, img_logit)
             loss = loss_f(sim, target)
             loss.backward()
             optimizer.step()
@@ -194,6 +196,9 @@ def training(train_dataloader: DataLoader,
 
             hit += hit_score(y, x)
             mrr += mrr_score(y, x)
+
+            if epoch % save_every == 0:
+                torch.save(model, saved_loc)
 
         epoch_loss.append(avg_loss / len(train_dataloader.dataset))
         epoch_hit.append(hit / len(train_dataloader.dataset))
