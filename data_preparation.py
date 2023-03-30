@@ -3,9 +3,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
-FEATURES_PATH = "./data/features/"
-
-
 class DataSetForCLIP(Dataset):
     """
     The DataSetForCLIP class takes the text_data, image_data and gold_labels as
@@ -45,8 +42,7 @@ class DataSetForCLIP(Dataset):
 
 def get_dataloaders(text_features: torch.Tensor,
                     image_features: list[torch.Tensor],
-                    target_images: list,
-                    test: bool = False) -> tuple[DataLoader, DataLoader]:
+                    target_images: list) -> tuple[DataLoader, DataLoader]:
     """
     This function enables us separate our data into batches of 32 which shuffle
     enabled for training data. The above functionality is enabled after the
@@ -63,8 +59,8 @@ def get_dataloaders(text_features: torch.Tensor,
         tuple[DataLoader, DataLoader]: training dataloader and test dataloader
     """
     train_text, test_text, train_image, test_image, train_targets, \
-    test_targets = train_test_split(image_features, text_features,
-                                   target_images)
+    test_targets = train_test_split(text_features, image_features,
+                                    target_images)
 
     # The train_text and train_image are combined to get train_data and feed to
     # the dataloader to get batches of 32. The same thing is done for the test
@@ -77,15 +73,15 @@ def get_dataloaders(text_features: torch.Tensor,
     return train_dataloader, test_dataloader
 
 
-def train_test_split(image_features: list,
-                     text_features: torch.Tensor,
+def train_test_split(text_features: torch.Tensor,
+                     image_features: list,
                      target_images: list):
     """
     Divides the training set so that 75% acts as the training data and 25% acts
     as the test data.
     Args:
-        image_features (list): image embedding tensors, 10 per row
         text_features (torch.Tensor): contains text embedding tensors
+        image_features (list): image embedding tensors, 10 per row
         target_images (list): each index represents the gold image position
                               in the image list array
     
@@ -97,11 +93,10 @@ def train_test_split(image_features: list,
     train_text = text_features[:train_size]
     train_image = image_features[:train_size]
     train_targets = target_images[:train_size]
-    
+
     test_text = text_features[train_size:]
     test_image = image_features[train_size:]
     test_targets = target_images[train_size:]
 
     return train_text, test_text, train_image, test_image, train_targets, \
            test_targets
-
