@@ -67,8 +67,8 @@ def get_dataloaders(text_features: torch.Tensor,
     # set.
     train_data = DataSetForCLIP(train_text, train_image, train_targets)
     test_data = DataSetForCLIP(test_text, test_image, test_targets)
-    train_dataloader = DataLoader(train_data, batch_size=512, shuffle=True)
-    test_dataloader = DataLoader(test_data, batch_size=512)
+    train_dataloader = DataLoader(train_data, batch_size=32, shuffle=True)
+    test_dataloader = DataLoader(test_data, batch_size=32)
 
     return train_dataloader, test_dataloader
 
