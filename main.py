@@ -4,7 +4,7 @@ import os
 from data_preparation import get_dataloaders
 from evaluation import evaluate_with_logits
 from helper import prepare_text, get_files
-from language_model import get_eval_scores
+from language_model import get_eval_scores, save_eval_scores
 from utils import load_dataset, calculate_similarity_score
 
 TEST_DATA_PATH = "./data/test/en.test.data.v1.1.txt"
@@ -79,8 +79,9 @@ def main():
     if args.CLIP_train == "CLIP_0":
         logits_per_image = calculate_similarity_score(text_features,
                                                       image_features)
-        hit_at_1, mrr = evaluate_with_logits(logits_per_image, target_images)
-        print(f"Hit@1 Rate: {hit_at_1}")
+        hit, mrr = evaluate_with_logits(logits_per_image, target_images)
+        save_eval_scores("pretrained model", hit, mrr, CLIP_0=True)
+        print(f"Hit@1 Rate: {hit}")
         print(f"MRR Value: {mrr}")
 
     # Choose between three fine-tuned CLIP models and two loss functions (set
