@@ -29,14 +29,13 @@ class ContrastiveCosineLoss(nn.Module):
         self.margin = margin
 
     def forward(self, output, target):
-        # cosine_similarity calculation between prediction array and
-        # target_images list(gold_label)
+        #cosine_similarity calculation between prediction array and 
+        #target_images list(gold_label)
         cos_sim = F.cosine_similarity(output, target)
         pos_loss = torch.mean(torch.pow(1 - cos_sim, 2))
-        neg_loss = torch.mean(torch.clamp(torch.pow(self.margin - cos_sim, 2),
-                                          min=0.0))
+        neg_loss_mask = (cos_sim < self.margin).float()
+        neg_loss = torch.mean(torch.pow(self.margin - cos_sim, 2) * neg_loss_mask)
         loss = pos_loss + neg_loss
-
         return loss
 
 
