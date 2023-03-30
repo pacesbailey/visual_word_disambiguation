@@ -369,16 +369,12 @@ def save_features(text_features: torch.Tensor,
 
         with open(f"{dest_path}/test_image_features.pickle", "wb") as file:
             pickle.dump(image_features, file)
-            file.close()
-
-        return text_features, image_features
 
     else:
-        torch.save(text_features, f"{dest_path}/text_features.pt")
+        torch.save(text_features, f"{dest_path}/train_text_features.pt")
 
         with open(f"{dest_path}/train_image_features.pickle", "wb") as file:
             pickle.dump(image_features, file)
-            file.close()
 
 
 def wrap_image_files(image_emb_path: str,
