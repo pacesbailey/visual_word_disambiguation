@@ -53,6 +53,14 @@ def main():
     # Evaluation of model by using just the pretrained clip embeddings for
     # texts and images and finding the cosine similarity between them.
     if args.CLIP_train == "CLIP_0":
+        # Loads the training and test data for the CLIP models
+        _, train_gold, train_image = prepare_text(
+            TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+        text_features, image_features, target_images = load_dataset(
+            train_image, train_gold, test=False)
+        train_dataloader, test_dataloader = get_dataloaders(
+            text_features, image_features, target_images)
+
         logits_per_image = calculate_similarity_score(text_features,
                                                       image_features)
         hit, mrr = evaluate_with_logits(logits_per_image, target_images)
@@ -67,28 +75,21 @@ def main():
 
     # This is the case if CLIP_1 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_1":
+        # Loads the training and test data for the CLIP models
+        _, train_gold, train_image = prepare_text(
+            TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+        text_features, image_features, target_images = load_dataset(
+            train_image, train_gold, test=False)
+        train_dataloader, test_dataloader = get_dataloaders(
+            text_features, image_features, target_images)
+
         if args.loss_function == "cross_entropy_loss":
-            # Loads the training and test data for the CLIP models
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_1",
                             loss_function="cross entropy loss")
 
         if args.loss_function == "contrastive_cosine_loss":
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_1",
@@ -96,27 +97,21 @@ def main():
 
     # This is the case if CLIP_2 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_2":
+        # Loads the training and test data for the CLIP models
+        _, train_gold, train_image = prepare_text(
+            TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+        text_features, image_features, target_images = load_dataset(
+            train_image, train_gold, test=False)
+        train_dataloader, test_dataloader = get_dataloaders(
+            text_features, image_features, target_images)
+
         if args.loss_function == "cross_entropy_loss":
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_2",
                             loss_function="cross entropy loss")
 
         if args.loss_function == "contrastive_cosine_loss":
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_2",
@@ -124,27 +119,21 @@ def main():
 
     # This is the case if CLIP_3 model is selected for performance evaluation
     if args.CLIP_train == "CLIP_3":
+        # Loads the training and test data for the CLIP models
+        _, train_gold, train_image = prepare_text(
+            TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
+        text_features, image_features, target_images = load_dataset(
+            train_image, train_gold, test=False)
+        train_dataloader, test_dataloader = get_dataloaders(
+            text_features, image_features, target_images)
+
         if args.loss_function == "cross_entropy_loss":
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_3",
                             loss_function="cross entropy loss")
 
         if args.loss_function == "contrastive_cosine_loss":
-            _, train_gold, train_image = prepare_text(
-                TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
-            text_features, image_features, target_images = load_dataset(
-                train_image, train_gold, test=False)
-            train_dataloader, test_dataloader = get_dataloaders(
-                text_features, image_features, target_images)
-            
             get_eval_scores(train_dataloader,
                             test_dataloader,
                             choose_model="clip_3",
