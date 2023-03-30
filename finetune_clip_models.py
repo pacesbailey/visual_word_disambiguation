@@ -24,7 +24,7 @@ class CLIP_1(nn.Module):
         self.gelu_image = nn.GELU()
         self.gelu_text = nn.GELU()
 
-    def forward(self, image_features, text_features):
+    def forward(self, text_features, image_features):
         text_embedding = self.fc_text(text_features)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding = torch.nn.functional.normalize(text_embedding, dim=-1)
@@ -51,7 +51,7 @@ class CLIP_2(nn.Module):
         self.fc_image = nn.Linear(input_size, output_size)
         self.gelu_image = nn.GELU()
 
-    def forward(self, image_features, text_features):
+    def forward(self, text_features, image_features):
         text_embedding = self.fc_text(text_features)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding = self.fc_text(text_embedding)
@@ -84,13 +84,15 @@ class CLIP_3(nn.Module):
         self.gelu_text = nn.GELU()
         self.gelu_image = nn.GELU()
 
-    def forward(self, image_features, text_features):
+    def forward(self, text_features, image_features):
         text_embedding = self.lstm_text(text_features)[0]
+        text_embedding = self.gelu_text(text_embedding)
         text_embedding = self.fc_text(text_embedding)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding = torch.nn.functional.normalize(text_embedding, dim=-1)
 
         image_embedding = self.lstm_image(image_features)[0]
+        image_embedding = self.gelu_image(image_embedding)
         image_embedding = self.fc_image(image_embedding)
         image_embedding = self.gelu_image(image_embedding)
         image_embedding = torch.nn.functional.normalize(image_embedding,
