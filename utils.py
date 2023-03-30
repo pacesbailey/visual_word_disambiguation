@@ -62,28 +62,29 @@ def calculate_similarity_score(text_features: torch.Tensor,
     return logits_per_image
 
 
-def gold_position_search(image_array: np.ndarray,
-                         gold_array: np.ndarray) -> list:
-    """
-    Gets the index number of the gold image for each set of 10 images.
-
+def gold_position_search(image_list, gold_list):
+  """ 
     Args:
-        image_array (np.ndarray): each row depicts the 10 images assigned to
-                                  the text at that index in text_list
-        gold_array (np.ndarray): contains the image out of the image_list which
-                                is most relevant to the text
+        image_list :list where each row depicts the 10 images assigned to the 
+                    text at that index in text_list 
+        gold_list  :list that contain the image out of the image_list which 
+                    is most relevant to the text
     
     Return: 
-        list: contains the gold image index in the image_list
-    """
-    target_images = []
+        target_images  : list which conatins the gold image index in the 
+                         image_list 
+  """
+  target_images = []
 
-    for i, gold in enumerate(gold_array):
-        for j, image in enumerate(image_array[i]):
-            if gold == image:
-                target_images.append(j)
+  for i in range(len(gold_list)):
+    #pos_idx stores the position of gold_image in image_list
+    pos_idx = 0
+    for j in range(len(image_list[i])):
+      if gold_list[i] != image_list[i][j]:
+        pos_idx += 1
 
-    return target_images
+    target_images.append(pos_idx)
+  return target_images
 
 
 def load_dataset(image_list: np.ndarray,
