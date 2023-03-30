@@ -29,7 +29,7 @@ class ContrastiveCosineLoss(nn.Module):
         self.margin = margin
 
     def forward(self, output, target):
-        #cosine_similarity calculation between predction array and 
+        #cosine_similarity calculation between prediction array and 
         #target_images list(gold_label)
         cos_sim = F.cosine_similarity(output, target)
         pos_loss = torch.mean(torch.pow(1 - cos_sim, 2))
