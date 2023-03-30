@@ -36,7 +36,8 @@ def get_eval_scores(train_dataloader: DataLoader,
 
     plot_loss_graph(epoch_loss, epoch_hit, epoch_mrr)
     hit, mrr = testing(model, test_dataloader)
-    save_eval_scores(choose_model, hit, mrr,
+    save_eval_scores(choose_model, hit / len(test_dataloader.dataset),
+                     mrr / len(test_dataloader.dataset),
                      loss_function=loss_function, test=True)
 
     print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
@@ -208,7 +209,7 @@ def training(train_dataloader: DataLoader,
             loss.backward()
             optimizer.step()
 
-            avg_loss += loss.item() * img.size(0)
+            avg_loss += loss.item() * images.size(0)
 
             # label_idx and sim are converted to numpy arrays since components
             # with required_grad as True can be referenced before next epoch.
