@@ -29,61 +29,84 @@ def get_eval_scores(train_dataloader: DataLoader,
     model, epoch_loss, epoch_hit, epoch_mrr = training(train_dataloader,
                                                        choose_model,
                                                        loss_function)
-    save_eval_scores(choose_model, loss_function, epoch_loss, epoch_hit,
-                     epoch_mrr, test=False)
+    save_eval_scores(choose_model, epoch_hit, epoch_mrr, epoch_loss,
+                     loss_function)
 
     print("Drawing graphs showing the metrics per epoch...")
 
     plot_loss_graph(epoch_loss, epoch_hit, epoch_mrr)
     hit, mrr = testing(model, test_dataloader)
-    save_eval_scores(choose_model, loss_function, None, hit, mrr, test=True)
+    save_eval_scores(choose_model, hit, mrr,
+                     loss_function=loss_function, test=True)
 
     print(f"Hit@1 score for test set: {hit / len(test_dataloader.dataset)}")
     print(f"MRR value for the test set: {mrr / len(test_dataloader.dataset)}")
 
 
 def save_eval_scores(model: str,
-                     loss_function: str,
-                     loss: Union[list, None],
                      hit: Union[list, float],
                      mrr: Union[list, float],
-                     test: bool):
+                     loss: Union[list, None] = None,
+                     loss_function: Union[str, None] = None,
+                     test: bool = False,
+                     CLIP_0: bool = False):
     """
     Saves the evaluation metrics to a .json file for future reference.
 
     Args:
         model (str): name of model used
-        loss_function (str): name of loss function used
-        loss (Union[list, None]): list of loss values per epoch
         hit (Union[list, float]): Hit@1 rates per epoch
         mrr (Union[list, float]): MRR values per epoch
+        loss_function (Union[str, None]): name of loss function used
+        loss (Union[list, None]): list of loss values per epoch
         test (bool): indicates if used for testing or training
+        CLIP_0 (bool): indicates if used with CLIP 0 model
     """
     try:
-        with open("./data/metrics.json", "r+") as file:
-            existing_data = json.load(file)
+        try:
+            with open("./data/metrics.json", "r+") as file:
+                existing_data = json.load(file)
 
-    except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError:
+            existing_data = {}
+
+    except FileNotFoundError:
         existing_data = {}
+        with open("./data/metrics.json", "w") as file:
+            json.dump(existing_data, file)
 
     if f"{model}, {loss_function}" not in existing_data:
-        existing_data[f"{model}, {loss_function}"] = {}
+        if not CLIP_0:
+            existing_data[f"{model}, {loss_function}"] = {}
+        else:
+            existing_data[f"{model}"] = {}
 
     new_data = {}
 
-    if test:
+    if not CLIP_0:
+        # Used with the test metrics
+        if test:
+            new_data["hit"] = hit
+            new_data["mrr"] = mrr[0]
+            existing_data[
+                f"{model}, {loss_function}"]["test metrics"] = new_data
+
+        # Used with the training metrics
+        else:
+            for i in range(len(loss)):
+                new_data[f"epoch {i + 1}"] = {}
+                new_data[f"epoch {i + 1}"]["loss"] = loss[i]
+                new_data[f"epoch {i + 1}"]["hit"] = hit[i]
+                new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
+
+            existing_data[
+                f"{model}, {loss_function}"]["train metrics"] = new_data
+
+    # Procedure used with the pretrained CLIP model
+    else:
         new_data["hit"] = hit
         new_data["mrr"] = mrr[0]
-        existing_data[f"{model}, {loss_function}"]["test metrics"] = new_data
-
-    else:
-        for i in range(len(loss)):
-            new_data[f"epoch {i + 1}"] = {}
-            new_data[f"epoch {i + 1}"]["loss"] = loss[i]
-            new_data[f"epoch {i + 1}"]["hit"] = hit[i]
-            new_data[f"epoch {i + 1}"]["mrr"] = mrr[i][0]
-
-        existing_data[f"{model}, {loss_function}"]["train metrics"] = new_data
+        existing_data[f"{model}"] = new_data
 
     with open("./data/metrics.json", "w") as file:
         json.dump(existing_data, file, indent=4)
