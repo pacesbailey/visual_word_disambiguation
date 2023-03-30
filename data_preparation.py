@@ -66,7 +66,7 @@ def get_dataloaders(train_features: tuple, test_features: tuple) -> tuple:
     # set.
     train_data = DataSetForCLIP(train_text, train_image, train_targets)
     test_data = DataSetForCLIP(test_text, test_image, test_targets)
-    train_dataloader = DataLoader(train_data, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_data, batch_size=32)
+    train_dataloader = DataLoader(train_data, batch_size=512, shuffle=True)
+    test_dataloader = DataLoader(test_data, batch_size=512)
 
     return train_dataloader, test_dataloader
