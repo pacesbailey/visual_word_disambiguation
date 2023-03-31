@@ -87,8 +87,7 @@ def gold_position_search(image_list, gold_list):
 
 
 def load_dataset(image_list: np.ndarray,
-                 gold_list: np.ndarray,
-                 test: bool) -> tuple[Tensor, list[Tensor], list]:
+                 gold_list: np.ndarray) -> tuple[Tensor, list[Tensor], list]:
     """
     Args:
         image_list (np.ndarray): each row depicts the 10 images assigned to the
