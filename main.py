@@ -19,7 +19,7 @@ def main():
     parser.add_argument(
         "--prepare", dest="prepare",
         help="Prepares the data",
-        action="store",
+        action="store_true",
         default=None
     )
 
