@@ -20,8 +20,7 @@ def main():
         "--prepare", dest="prepare",
         help="Prepares the data",
         action="store",
-        default=None,
-        choices=["train", "test"]
+        default=None
     )
 
     parser.add_argument(
@@ -44,11 +43,8 @@ def main():
 
     # This flag is set to True only if the pretrained clip needs to be
     # recalculated and stored in the respective files.
-    if args.prepare == "train":
+    if args.prepare:
         get_files()
-
-    if args.prepare == "test":
-        get_files(test=True)
 
     # Evaluation of model by using just the pretrained clip embeddings for
     # texts and images and finding the cosine similarity between them.
