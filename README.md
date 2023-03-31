@@ -62,7 +62,7 @@ The code consists of two independent processes:
 
 ### Data pre-processing:
 
-Activated using the following terminal command <strong> <i> python main.py --prepare </i> </strong>
+Activated using the following terminal command  ``` python main.py --prepare ```
 
 #### The following processes are executed: 
 
@@ -83,7 +83,7 @@ Activated using the following terminal command <strong> <i> python main.py --pre
 
 ### Model training
 
-Activated using the following terminal command <strong><i> python main.py --choose_model --loss_function </i></strong>
+Activated using the following terminal command ```python main.py --choose_model --loss_function ```
 
 #### Possible model choices: 
 
