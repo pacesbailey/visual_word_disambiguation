@@ -57,12 +57,14 @@ class Text_Encoder1(nn.Module):
     
 class CLIP_1(nn.Module):
     def __init__(
-        self
+        self,
+        input_size = 512,
+        output_size = 512
     ):
         super().__init__()
 
-        self.image_encoder = Image_Encoder1()
-        self.text_encoder = Text_Encoder1()
+        self.image_encoder = Image_Encoder1(input_size, output_size)
+        self.text_encoder = Text_Encoder1(input_size, output_size)
 
         
     def forward(self, text_features, image_features):
@@ -127,12 +129,14 @@ class Text_Encoder2(nn.Module):
 
 class CLIP_2(nn.Module):
     def __init__(
-        self
+        self,
+        input_size = 512,
+        output_size = 512
     ):
         super().__init__()
 
-        self.image_encoder = Image_Encoder2()
-        self.text_encoder = Text_Encoder2()
+        self.image_encoder = Image_Encoder2(input_size, output_size)
+        self.text_encoder = Text_Encoder2(input_size, output_size)
 
         
     def forward(self, text_features, image_features):
@@ -200,12 +204,15 @@ class Text_Encoder3(nn.Module):
     
 class CLIP_3(nn.Module):
     def __init__(
-        self
+        self,
+        input_size = 512,
+        hidden_size = 512,
+        output_size = 512
     ):
         super().__init__()
 
-        self.image_encoder = Image_Encoder3()
-        self.text_encoder = Text_Encoder3()
+        self.image_encoder = Image_Encoder3(input_size,hidden_size,output_size)
+        self.text_encoder = Text_Encoder3(input_size,hidden_size,output_size)
 
         
     def forward(self, text_features, image_features):
