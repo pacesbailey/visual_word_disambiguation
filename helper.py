@@ -180,7 +180,7 @@ def get_image_embeddings(data_path: str,
     wrapper_file.close()
     progress_bar.close()
 
-    print("Training image embeddings retrieved.")
+    print("Image embeddings retrieved.")
     return embedding_dictionary
 
 
@@ -219,20 +219,23 @@ def get_text_embeddings(text_emb_path: str,
     Return:
         torch.Tensor: filled with the text embeddings
     """
-
-
     embedding_list = []
+    
     for item in os.listdir(text_emb_path):
         if not item.startswith(".") and os.path.isfile(os.path.join(
                 text_emb_path, item)):
             embedding_list.append(item)
+            
     wrapper_file = h5py.File(f"{wrapper_path}/train_text_wrapper.h5", "r+")
     text_embeddings = \
         [torch.from_numpy(wrapper_file[f"{item.removesuffix('.h5')}"][0])
          for item in embedding_list]
+    
     text_embeddings = torch.stack(text_embeddings)
     wrapper_file.close()
+
     print("Text embeddings retrieved.")
+    
     return text_embeddings
 
 
@@ -292,7 +295,6 @@ def save_features(text_features: torch.Tensor,
         image_features (dict): contains with image features and index numbers
         dest_path (str): pathway where features will be saved
     """
-
     torch.save(text_features, f"{dest_path}/train_text_features.pt")
     with open(f"{dest_path}/train_image_features.pickle", "wb") as file:
         pickle.dump(image_features, file)
@@ -309,14 +311,18 @@ def wrap_image_files(image_emb_path: str,
     """
 
     embedded_image_list = os.listdir(image_emb_path)
+    
     if os.path.isfile(f"{wrapper_path}/train_image_wrapper.h5"):
         file = h5py.File(f"{wrapper_path}/train_image_wrapper.h5", "a")
+        
         for embedding in embedded_image_list:
             file[f"{str(embedding).removesuffix('.h5')}"] = \
                 h5py.ExternalLink(f"{image_emb_path}/{embedding}", "image")
         file.close()
+    
     else:
         print("Wrapper not found.")
+        
     print("Training image embeddings wrapped.")
 
 
@@ -329,12 +335,16 @@ def wrap_text_files(text_emb_path: str, wrapper_path: str):
     """
 
     embedded_text_list = os.listdir(text_emb_path)
+    
     if os.path.isfile(f"{wrapper_path}/train_text_wrapper.h5"):
         file = h5py.File(f"{wrapper_path}/train_text_wrapper.h5", "a")
+        
         for embedding in embedded_text_list:
             file[f"{str(embedding).removesuffix('.h5')}"] = \
                 h5py.ExternalLink(f"{text_emb_path}/{embedding}", "text")
         file.close()
+        
     else:
         print("File not found.")
+        
     print('Training text embeddings wrapped.')
