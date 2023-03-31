@@ -57,7 +57,7 @@ def main():
         _, train_gold, train_image = prepare_text(
             TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
         text_features, image_features, target_images = load_dataset(
-            train_image, train_gold, test=False)
+            train_image, train_gold)
         train_dataloader, test_dataloader = get_dataloaders(
             text_features, image_features, target_images)
 
@@ -79,7 +79,7 @@ def main():
         _, train_gold, train_image = prepare_text(
             TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
         text_features, image_features, target_images = load_dataset(
-            train_image, train_gold, test=False)
+            train_image, train_gold)
         train_dataloader, test_dataloader = get_dataloaders(
             text_features, image_features, target_images)
 
@@ -101,7 +101,7 @@ def main():
         _, train_gold, train_image = prepare_text(
             TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
         text_features, image_features, target_images = load_dataset(
-            train_image, train_gold, test=False)
+            train_image, train_gold)
         train_dataloader, test_dataloader = get_dataloaders(
             text_features, image_features, target_images)
 
@@ -123,7 +123,7 @@ def main():
         _, train_gold, train_image = prepare_text(
             TRAIN_DATA_PATH, TRAIN_GOLD_PATH)
         text_features, image_features, target_images = load_dataset(
-            train_image, train_gold, test=False)
+            train_image, train_gold)
         train_dataloader, test_dataloader = get_dataloaders(
             text_features, image_features, target_images)
 
