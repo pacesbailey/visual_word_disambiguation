@@ -14,29 +14,29 @@ class Image_Encoder1(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
         self.fc_image = nn.Linear(input_size, output_size)
         self.gelu_image = nn.GELU()
-
- 
+        self.avgpool1d = nn.AdaptiveAvgPool1d(1)
 
         
     def forward(self,image_features):
 
-        image_embedding = self.fc_image(image_features) 
+        image_embedding = self.fc_image(image_features)
         image_embedding = self.gelu_image(image_embedding)
+        image_embedding = self.avgpool1d(image_embedding)
         image_embedding = torch.nn.functional.normalize(image_embedding, dim=-1)
-
+        image_embedding = image_embedding.squeeze(2)
         return image_embedding
     
 class Text_Encoder1(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
@@ -59,7 +59,7 @@ class CLIP_1(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
@@ -82,12 +82,13 @@ class Image_Encoder2(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
         self.fc_image = nn.Linear(input_size, output_size)
         self.gelu_image = nn.GELU()
+        self.avgpool1d = nn.AdaptiveAvgPool1d(1)
  
 
         
@@ -95,7 +96,8 @@ class Image_Encoder2(nn.Module):
 
         image_embedding = self.fc_image(image_features) 
         image_embedding = self.gelu_image(image_embedding)
-        image_embedding = self.fc_image(image_features) 
+        image_embedding = self.fc_image(image_features)
+        image_embedding = self.avgpool1d(image_embedding)
         image_embedding = self.gelu_image(image_embedding)
         image_embedding = torch.nn.functional.normalize(image_embedding, dim=-1)
 
@@ -105,7 +107,7 @@ class Text_Encoder2(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
@@ -121,6 +123,7 @@ class Text_Encoder2(nn.Module):
         text_embedding = self.fc_text(text_features)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding  = torch.nn.functional.normalize(text_embedding, dim=-1)
+        image_embedding = image_embedding.squeeze(2)
 
 
         return text_embedding
@@ -131,7 +134,7 @@ class CLIP_2(nn.Module):
     def __init__(
         self,
         input_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
@@ -153,26 +156,26 @@ class Image_Encoder3(nn.Module):
         self,
         input_size = 512,
         hidden_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
         self.lstm_image = nn.LSTM(input_size, hidden_size)
         self.fc_image = nn.Linear(hidden_size, output_size)
         self.gelu_image = nn.GELU()
-
- 
+        self.avgpool1d = nn.AdaptiveAvgPool1d(1)
 
         
     def forward(self,image_features):
         
         image_embedding = self.lstm_image(image_features)[0]
         image_embedding = self.gelu_image(image_embedding)
-        image_embedding = self.fc_image(image_embedding) 
+        image_embedding = self.fc_image(image_embedding)
+        image_embedding = self.avgpool1d(image_embedding)
         image_embedding = self.gelu_image(image_embedding)
         image_embedding = torch.nn.functional.normalize(image_embedding, dim=-1)
-
-
+        image_embedding = image_embedding.squeeze(2)
+        
         return image_embedding
     
 class Text_Encoder3(nn.Module):
@@ -180,7 +183,7 @@ class Text_Encoder3(nn.Module):
         self,
         input_size = 512,
         hidden_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
@@ -207,7 +210,7 @@ class CLIP_3(nn.Module):
         self,
         input_size = 512,
         hidden_size = 512,
-        output_size = 512
+        output_size = 10
     ):
         super().__init__()
 
