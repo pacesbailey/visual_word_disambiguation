@@ -86,7 +86,8 @@ class Image_Encoder2(nn.Module):
     ):
         super().__init__()
 
-        self.fc_image = nn.Linear(input_size, output_size)
+        self.fc_image_1 = nn.Linear(input_size, input_size)
+        self.fc_image_2 = nn.Linear(input_size, output_size)
         self.gelu_image = nn.GELU()
         self.avgpool1d = nn.AdaptiveAvgPool1d(1)
  
@@ -94,12 +95,13 @@ class Image_Encoder2(nn.Module):
         
     def forward(self,image_features):
 
-        image_embedding = self.fc_image(image_features) 
+        image_embedding = self.fc_image_1(image_features) 
         image_embedding = self.gelu_image(image_embedding)
-        image_embedding = self.fc_image(image_features)
+        image_embedding = self.fc_image_2(image_embedding)
         image_embedding = self.avgpool1d(image_embedding)
         image_embedding = self.gelu_image(image_embedding)
         image_embedding = torch.nn.functional.normalize(image_embedding, dim=-1)
+        image_embedding = image_embedding.squeeze(2)
 
         return image_embedding
     
@@ -111,16 +113,17 @@ class Text_Encoder2(nn.Module):
     ):
         super().__init__()
 
-        self.fc_text = nn.Linear(input_size, output_size)
+        self.fc_text_1 = nn.Linear(input_size, input_size)
+        self.fc_text_2 = nn.Linear(input_size, output_size)
         self.gelu_text = nn.GELU()
  
 
         
     def forward(self,text_features):
         
-        text_embedding = self.fc_text(text_features)
+        text_embedding = self.fc_text_1(text_features)
         text_embedding = self.gelu_text(text_embedding)
-        text_embedding = self.fc_text(text_embedding)
+        text_embedding = self.fc_text_2(text_embedding)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding  = torch.nn.functional.normalize(text_embedding, dim=-1)
 
