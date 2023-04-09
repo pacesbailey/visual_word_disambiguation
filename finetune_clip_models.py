@@ -120,10 +120,9 @@ class Text_Encoder2(nn.Module):
         
         text_embedding = self.fc_text(text_features)
         text_embedding = self.gelu_text(text_embedding)
-        text_embedding = self.fc_text(text_features)
+        text_embedding = self.fc_text(text_embedding)
         text_embedding = self.gelu_text(text_embedding)
         text_embedding  = torch.nn.functional.normalize(text_embedding, dim=-1)
-        image_embedding = image_embedding.squeeze(2)
 
 
         return text_embedding
