@@ -136,7 +136,8 @@ def testing(model: nn.Module,
         for batch in tqdm(test_dataloader):
             text, images, _, label_idx = batch
             text_logit, image_logit = model(text, images)
-            sim = torch.einsum('ijk,ik->ij', image_logit, text_logit)
+            
+            sim = torch.einsum('ij,ij->ij', image_logit, text_logit)
 
             hit += hit_score(sim, label_idx)
             mrr += mrr_score(sim, label_idx)
@@ -201,11 +202,14 @@ def training(train_dataloader: DataLoader,
             text, images, target, label_idx = batch
             optimizer.zero_grad()
             text_logit, image_logit = model(text, images)
-
+            
+            loss_text = loss_f(text_logit, target)
+            loss_image = loss_f(image_logit, target)
+            loss = (loss_text + loss_image)/2
             # Performs matrix multiplication of 2 tensors given the dimensions.
             # This method is called Einstein's summation.
-            sim = torch.einsum('ijk,ik->ij', image_logit, text_logit)
-            loss = loss_f(sim, target)
+            sim = torch.einsum('ij,ij->ij', image_logit, text_logit)
+            #loss = loss_f(sim, target)
             loss.backward()
             optimizer.step()
 
